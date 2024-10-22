@@ -16,7 +16,7 @@ router.use(authController.protect);
 router.route('/getMe').get(userController.setId, userController.getUser);
 router
   .route('/updateMe')
-  .get(userController.setId, userController.updateUser);
+  .patch(userController.setId, userController.updateUser);
 router
   .route('/deleteMe')
   .get(userController.setId, userController.deleteUser);

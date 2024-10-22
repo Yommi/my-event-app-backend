@@ -2,6 +2,7 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const authController = require('../Controllers/authController');
 const Event = require('../Models/eventModel');
+const User = require('../Models/userModel');
 
 exports.getAll = (model) => {
   return catchAsync(async (req, res, next) => {
@@ -32,12 +33,15 @@ exports.getOne = (model) => {
 
 exports.createOne = (model) => {
   return catchAsync(async (req, res, next) => {
+    // FILTER FOR EVENT req.body
     if (model === Event) {
       req.body.host = req.params.id;
-      // if (!req.body.hosts) {
-      //   req.body.hosts = [];
-      // }
-      // req.body.hosts.push(req.params.id);
+    }
+
+    // FILTER FOR USER req.body
+    if (model === User) {
+      const filteredBody = authController.filterObj(req.body, 'role');
+      req.body = filteredBody;
     }
 
     const doc = await model.create(req.body);
@@ -68,6 +72,23 @@ exports.deleteOne = (model) => {
 
 exports.updateOne = (model) => {
   return catchAsync(async (req, res, next) => {
+    // FILTER FOR USER req.body
+    if (model === User) {
+      const filteredBody = authController.filterObj(
+        req.body,
+        'role',
+        'password',
+        'passwordConfirm'
+      );
+      req.body = filteredBody;
+    }
+
+    // FILTER FOR EVENT req.body
+    if (model === Event) {
+      const filteredBody = authController.filterObj(req.body, 'host');
+      req.body = filteredBody;
+    }
+
     const doc = await model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,

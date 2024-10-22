@@ -33,6 +33,7 @@ const filterObj = (obj, ...unWantedProps) => {
   });
   return newObj;
 };
+exports.filterObj = filterObj;
 
 exports.signUp = catchAsync(async (req, res, next) => {
   const filteredBody = filterObj(req.body, 'role');
