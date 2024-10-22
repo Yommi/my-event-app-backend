@@ -10,6 +10,7 @@ router.route('/login').post(authController.login);
 router.route('/forgotPassword').post(authController.forgotPassword);
 router.route('/resetPassword/:token').post(authController.resetPassword);
 
+// PROTECTED
 router.use(authController.protect);
 
 router.route('/getMe').get(userController.setId, userController.getUser);
@@ -22,7 +23,11 @@ router
 
 router.route('/updatePassword').post(userController.updatePassword);
 
-// Admin routes
+// FOLLOW AND UNFOLLOW
+router.patch('/:id/follow', userController.follow);
+router.patch('/:id/unfollow', userController.unfollow);
+
+// ADMIN ROUTES
 router.use(authController.restrictTo('admin'));
 
 router

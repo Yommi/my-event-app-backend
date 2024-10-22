@@ -37,3 +37,59 @@ exports.setId = catchAsync(async (req, res, next) => {
 
   next();
 });
+
+exports.follow = catchAsync(async (req, res, next) => {
+  const followerId = req.user._id;
+  const followedId = req.params.id;
+
+  if (followerId.toString() === followedId) {
+    return next(new AppError('You cannot follow yourself', 400));
+  }
+
+  const followedUser = await User.findByIdAndUpdate(
+    followedId,
+    { $addToSet: { followers: followerId } },
+    { new: true }
+  );
+
+  if (!followedUser) {
+    return next(new AppError('User not found', 404));
+  }
+
+  const followingUser = await User.findByIdAndUpdate(
+    followerId,
+    { $addToSet: { following: followedId } },
+    { new: true }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Followed successfully!',
+  });
+});
+
+exports.unfollow = catchAsync(async (req, res, next) => {
+  const followerId = req.user._id;
+  const unfollowedId = req.params.id;
+
+  const unfollowedUser = await User.findByIdAndUpdate(
+    unfollowedId,
+    { $pull: { followers: followerId } }, // Remove followerId from followers array
+    { new: true }
+  );
+
+  if (!unfollowedUser) {
+    return next(new AppError('User not found', 404));
+  }
+
+  const unfollowingUser = await User.findByIdAndUpdate(
+    followerId,
+    { $pull: { following: unfollowedId } },
+    { new: true }
+  );
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Unfollowed successfully!',
+  });
+});

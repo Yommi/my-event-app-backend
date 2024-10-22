@@ -1,6 +1,7 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const authController = require('../Controllers/authController');
+const Event = require('../Models/eventModel');
 
 exports.getAll = (model) => {
   return catchAsync(async (req, res, next) => {
@@ -31,8 +32,17 @@ exports.getOne = (model) => {
 
 exports.createOne = (model) => {
   return catchAsync(async (req, res, next) => {
+    if (model === Event) {
+      req.body.host = req.params.id;
+      // if (!req.body.hosts) {
+      //   req.body.hosts = [];
+      // }
+      // req.body.hosts.push(req.params.id);
+    }
+
     const doc = await model.create(req.body);
 
+    // remove password from json output
     if (Object.keys(req.body).includes('password')) {
       doc.password = undefined;
     }

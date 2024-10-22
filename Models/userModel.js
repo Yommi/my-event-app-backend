@@ -39,6 +39,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'default.png',
   },
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   passwordResetToken: String,
   passwordResetTokenExpires: Date,
   passwordChangedAt: Date,
@@ -88,5 +90,4 @@ userSchema.methods.checkIfPasswordChanged = function (JWTTimestamp) {
 };
 
 const User = new mongoose.model('User', userSchema);
-
 module.exports = User;
