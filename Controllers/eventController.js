@@ -6,6 +6,11 @@ const AppError = require('../utils/appError');
 
 exports.setHostId = catchAsync(async (req, res, next) => {
   req.params.id = req.user.id;
+
+  next();
+});
+
+exports.setUserId = catchAsync(async (req, res, next) => {
   req.params.userId = req.user.id;
 
   next();

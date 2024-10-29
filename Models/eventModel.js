@@ -30,13 +30,16 @@ const eventSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'An event must have a day'],
   },
+  price: {
+    type: Number,
+  },
   private: {
     type: Boolean,
     default: false,
   },
   displayCover: {
     type: String,
-    default: 'defaultCover.jpg',
+    default: 'default.jpg',
   },
   location: {
     type: {
