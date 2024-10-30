@@ -5,16 +5,19 @@ const eventController = require('../Controllers/eventController');
 const router = express.Router();
 
 router.route('/').get(eventController.getAllEvents);
+router.route('/nearby').get(eventController.GetNearMe);
+
 // PROTECTED ROUTES BELOW
 router.use(authController.protect);
 
 router
   .route('/my')
-  .get(eventController.setUserId, eventController.getUserEvents)
+  .get(eventController.setHostId, eventController.getUserEvents)
   .post(eventController.setHostId, eventController.createEvent)
   .patch(eventController.setHostId, eventController.updateEvent)
   .delete(eventController.setHostId, eventController.deleteEvent);
 
+// router.route('/nearBy').get(eventController.GetNearMe);
 // RESTRICT ALL ROUTES BELOW TO ADMIN
 
 router.use(authController.restrictTo('admin'));

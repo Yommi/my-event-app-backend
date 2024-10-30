@@ -7,10 +7,7 @@ const AppError = require('../utils/appError');
 exports.setHostId = catchAsync(async (req, res, next) => {
   req.params.id = req.user.id;
 
-  next();
-});
-
-exports.setUserId = catchAsync(async (req, res, next) => {
+  // FOR /events/users/:userId
   req.params.userId = req.user.id;
 
   next();
@@ -32,5 +29,32 @@ exports.getUserEvents = catchAsync(async (req, res, next) => {
     status: 'success',
     results: events.length,
     data: events,
+  });
+});
+
+exports.GetNearMe = catchAsync(async (req, res, next) => {
+  const { lat, lng } = req.query;
+
+  if (!lat || !lng) {
+    return next(new AppError('Latituted and longitude required', 400));
+  }
+
+  const radiusInRadians = 10 / 6378.1;
+
+  const closeEvents = await Event.find({
+    location: {
+      $geoWithin: {
+        $centerSphere: [
+          [parseFloat(lng), parseFloat(lat)],
+          radiusInRadians,
+        ],
+      },
+    },
+  });
+
+  res.status(200).json({
+    status: 'success',
+    results: closeEvents.length,
+    data: closeEvents,
   });
 });

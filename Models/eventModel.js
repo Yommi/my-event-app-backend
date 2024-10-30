@@ -52,5 +52,7 @@ const eventSchema = new mongoose.Schema({
   },
 });
 
+eventSchema.index({ location: '2dsphere' });
+
 const Event = mongoose.model('Event', eventSchema);
 module.exports = Event;
