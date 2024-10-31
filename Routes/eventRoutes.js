@@ -5,7 +5,7 @@ const eventController = require('../Controllers/eventController');
 const router = express.Router();
 
 router.route('/').get(eventController.getAllEvents);
-router.route('/nearby').get(eventController.GetNearMe);
+router.route('/nearby').get(eventController.getNearMe);
 
 // PROTECTED ROUTES BELOW
 router.use(authController.protect);

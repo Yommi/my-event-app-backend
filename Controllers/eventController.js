@@ -32,7 +32,7 @@ exports.getUserEvents = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.GetNearMe = catchAsync(async (req, res, next) => {
+exports.getNearMe = catchAsync(async (req, res, next) => {
   const { lat, lng } = req.query;
 
   if (!lat || !lng) {

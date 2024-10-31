@@ -22,6 +22,8 @@ app.use('/api/v1/admins', adminRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/events', eventRoutes);
 
+app.use('/api/v1/images', express.static('images'));
+
 app.use(errorController);
 
 module.exports = app;
