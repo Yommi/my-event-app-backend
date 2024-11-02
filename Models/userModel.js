@@ -8,6 +8,11 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'A user must have a name'],
   },
+  username: {
+    type: String,
+    required: [true, 'A user must have a username'],
+    unique: [true, 'username already taken'],
+  },
   email: {
     type: String,
     lowercase: true,
@@ -35,9 +40,9 @@ const userSchema = new mongoose.Schema({
       },
     },
   },
-  photo: {
+  profilePhoto: {
     type: String,
-    default: 'default.png',
+    default: 'default.jpg',
   },
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

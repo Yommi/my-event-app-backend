@@ -50,7 +50,7 @@ exports.getNearMe = catchAsync(async (req, res, next) => {
         ],
       },
     },
-  });
+  }).populate('host', 'username');
 
   res.status(200).json({
     status: 'success',
