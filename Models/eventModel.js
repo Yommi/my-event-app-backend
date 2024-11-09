@@ -33,6 +33,21 @@ const eventSchema = new mongoose.Schema({
   price: {
     type: Number,
   },
+  currency: {
+    type: String,
+    enum: ['cad', 'usd', 'eur', 'gbp', 'jpy', 'aud', 'inr'],
+    lowercase: true,
+    validate: {
+      validator: function (value) {
+        // Only validate (require) currency if price is provided
+        if (this.price) {
+          return value != null; // Check that currency is not null or undefined
+        }
+        return true; // If price is not set, currency is not required
+      },
+      message: 'Currency is required if price is provided',
+    },
+  },
   private: {
     type: Boolean,
     default: false,

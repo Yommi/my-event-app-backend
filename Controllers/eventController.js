@@ -58,3 +58,33 @@ exports.getNearMe = catchAsync(async (req, res, next) => {
     data: closeEvents,
   });
 });
+
+exports.getNotNearMe = catchAsync(async (req, res, next) => {
+  const { lat, lng } = req.query;
+
+  if (!lat || !lng) {
+    return next(new AppError('Latitude and longitude required', 400));
+  }
+
+  const radiusInRadians = 10 / 6378.1;
+
+  // Find events outside the radius
+  const farEvents = await Event.find({
+    location: {
+      $not: {
+        $geoWithin: {
+          $centerSphere: [
+            [parseFloat(lng), parseFloat(lat)],
+            radiusInRadians,
+          ],
+        },
+      },
+    },
+  }).populate('host', 'username');
+
+  res.status(200).json({
+    status: 'success',
+    results: farEvents.length,
+    data: farEvents,
+  });
+});

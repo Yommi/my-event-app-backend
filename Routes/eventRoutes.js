@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.route('/').get(eventController.getAllEvents);
 router.route('/nearby').get(eventController.getNearMe);
+router.route('/far').get(eventController.getNotNearMe);
 
 // PROTECTED ROUTES BELOW
 router.use(authController.protect);
