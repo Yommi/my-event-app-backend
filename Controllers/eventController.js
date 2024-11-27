@@ -33,24 +33,90 @@ exports.getUserEvents = catchAsync(async (req, res, next) => {
 });
 
 exports.getNearMe = catchAsync(async (req, res, next) => {
-  const { lat, lng } = req.query;
+  const { lat, lng, query = '' } = req.query;
 
   if (!lat || !lng) {
     return next(new AppError('Latituted and longitude required', 400));
   }
 
-  const radiusInRadians = 10 / 6378.1;
+  const radius = 10 * 1000; // 10km;
 
-  const closeEvents = await Event.find({
-    location: {
-      $geoWithin: {
-        $centerSphere: [
-          [parseFloat(lng), parseFloat(lat)],
-          radiusInRadians,
-        ],
+  const closeEvents = await Event.aggregate([
+    // Filter events within the radius
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [parseFloat(lng), parseFloat(lat)],
+        },
+        distanceField: 'distance', // Adds the distance from the user to the event
+        maxDistance: radius,
+        spherical: true,
       },
     },
-  }).populate('host', 'username');
+
+    // Sort by date first (ascending order, most recent first)
+    { $sort: { date: 1 } },
+
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'host',
+        foreignField: '_id',
+        as: 'hostDetails',
+      },
+    },
+    // Flatten the 'hostDetails' array (because $lookup returns an array)
+    {
+      $unwind: {
+        path: '$hostDetails',
+        // preserveNullAndEmptyArrays: true, // Optional: keep events without a host
+      },
+    },
+    // Add priority scores based on search query
+    {
+      $addFields: {
+        priority: {
+          $switch: {
+            branches: [
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$name',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 1,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$location.address',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 2,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$time',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 3,
+              },
+            ],
+            default: 4, // Lowest priority for no matches
+          },
+        },
+      },
+    },
+    // Filter out events with no matches if needed
+    { $match: { priority: { $ne: 4 } } },
+    // Sort by priority first, then by date
+    { $sort: { priority: 1, date: 1 } },
+  ]);
 
   res.status(200).json({
     status: 'success',
@@ -60,27 +126,96 @@ exports.getNearMe = catchAsync(async (req, res, next) => {
 });
 
 exports.getNotNearMe = catchAsync(async (req, res, next) => {
-  const { lat, lng } = req.query;
+  const { lat, lng, query = '' } = req.query;
 
   if (!lat || !lng) {
     return next(new AppError('Latitude and longitude required', 400));
   }
 
-  const radiusInRadians = 10 / 6378.1;
+  const radius = 10 * 1000;
 
   // Find events outside the radius
-  const farEvents = await Event.find({
-    location: {
-      $not: {
-        $geoWithin: {
-          $centerSphere: [
-            [parseFloat(lng), parseFloat(lat)],
-            radiusInRadians,
-          ],
+  const farEvents = await Event.aggregate([
+    // Filter events outside the 10km radius
+    {
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [parseFloat(lng), parseFloat(lat)],
+        },
+        distanceField: 'distance', // Adds the distance from the user to the event
+        spherical: true,
+      },
+    },
+    // Filter out events that are within the 10km radius
+    {
+      $match: {
+        distance: { $gt: radius }, // Only events farther than 10km
+      },
+    },
+    // Sort by date (ascending order, older events first)
+    { $sort: { date: 1 } },
+
+    // Lookup the 'host' field to get more details
+    {
+      $lookup: {
+        from: 'users', // The collection to join (replace with your users collection name)
+        localField: 'host', // Field in Event model referencing the host (user ID)
+        foreignField: '_id', // Field in users collection to match with Event's 'host'
+        as: 'hostDetails', // The alias to return the populated data under
+      },
+    },
+    // Unwind the 'hostDetails' array (because $lookup returns an array)
+    {
+      $unwind: {
+        path: '$hostDetails',
+        preserveNullAndEmptyArrays: true, // Optional: if events may not have a host
+      },
+    },
+    // Add priority scores based on the search query
+    {
+      $addFields: {
+        priority: {
+          $switch: {
+            branches: [
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$name',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 1,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$location.address',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 2,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$time',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 3,
+              },
+            ],
+            default: 4, // Lowest priority for no matches
+          },
         },
       },
     },
-  }).populate('host', 'username');
+    // Filter out events with no matches based on the priority score
+    { $match: { priority: { $ne: 4 } } },
+    // Sort by priority first, then by date
+    { $sort: { priority: 1, date: 1 } },
+  ]);
 
   res.status(200).json({
     status: 'success',
