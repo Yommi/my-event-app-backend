@@ -15,7 +15,7 @@ router
   .route('/my')
   .get(eventController.setHostId, eventController.getUserEvents)
   .post(eventController.setHostId, eventController.createEvent)
-  .patch(eventController.setHostId, eventController.updateEvent)
+  .patch(eventController.setHostId, eventController.updateMyEvent)
   .delete(eventController.setHostId, eventController.deleteEvent);
 
 // router.route('/nearBy').get(eventController.GetNearMe);

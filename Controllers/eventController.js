@@ -1,4 +1,5 @@
 const factory = require('../Controllers/factoryController');
+const authController = require('../Controllers/authController');
 const Event = require('../Models/eventModel');
 const User = require('../Models/userModel');
 const catchAsync = require('../utils/catchAsync');
@@ -7,7 +8,7 @@ const AppError = require('../utils/appError');
 exports.setHostId = catchAsync(async (req, res, next) => {
   req.params.id = req.user.id;
 
-  // FOR /events/users/:userId
+  // FOR getMyEvents
   req.params.userId = req.user.id;
 
   next();
@@ -32,6 +33,51 @@ exports.getUserEvents = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.updateMyEvent = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+  const event = await Event.findById(req.query.event);
+
+  console.log(user._id, event.host);
+
+  if (!user._id.equals(event.host)) {
+    return next(new AppError('You are not allowed to update this event'));
+  }
+
+  const filteredBody = authController.filterObj(req.body, 'host');
+  req.body = filteredBody;
+  const doc = await Event.findByIdAndUpdate(req.query.event, req.body, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!doc) {
+    return next(new AppError('There is no document with that id', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: doc,
+  });
+});
+
+exports.deleteMyEvent = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+  const event = await Event.findById(req.query.event);
+
+  if (!user._id.equals(event.host)) {
+    return next(new AppError('You are not allowed to update this event'));
+  }
+
+  if (!event) {
+    return next(new AppError('There is no document with that id', 404));
+  }
+
+  res.status(204).json({
+    status: 'success',
+    data: null,
+  });
+});
+
 exports.getNearMe = catchAsync(async (req, res, next) => {
   const { lat, lng, query = '' } = req.query;
 
@@ -49,7 +95,6 @@ exports.getNearMe = catchAsync(async (req, res, next) => {
           type: 'Point',
           coordinates: [parseFloat(lng), parseFloat(lat)],
         },
-        distanceField: 'distance', // Adds the distance from the user to the event
         maxDistance: radius,
         spherical: true,
       },
@@ -143,7 +188,6 @@ exports.getNotNearMe = catchAsync(async (req, res, next) => {
           type: 'Point',
           coordinates: [parseFloat(lng), parseFloat(lat)],
         },
-        distanceField: 'distance', // Adds the distance from the user to the event
         spherical: true,
       },
     },

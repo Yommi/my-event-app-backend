@@ -51,7 +51,12 @@ exports.createOne = (model) => {
       doc.password = undefined;
     }
 
-    authController.createSendToken(doc, 201, res);
+    model === User
+      ? authController.createSendToken(doc, 201, res)
+      : res.status(200).json({
+          status: 'success',
+          data: doc,
+        });
   });
 };
 

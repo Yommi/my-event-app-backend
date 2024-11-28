@@ -44,6 +44,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'default.jpg',
   },
+  Events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   passwordResetToken: String,
