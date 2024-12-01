@@ -14,7 +14,7 @@ const eventSchema = new mongoose.Schema({
     ref: 'User',
     required: [true, 'An event must have a host'],
   },
-  availables: {
+  tags: {
     food: { type: Boolean, default: false },
     drinks: { type: Boolean, default: false },
     music: { type: Boolean, default: false },
@@ -55,6 +55,9 @@ const eventSchema = new mongoose.Schema({
   displayCover: {
     type: String,
     default: 'default.jpg',
+  },
+  displayVideo: {
+    type: String,
   },
   location: {
     type: {
