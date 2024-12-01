@@ -95,7 +95,6 @@ exports.getNearMe = catchAsync(async (req, res, next) => {
           type: 'Point',
           coordinates: [parseFloat(lng), parseFloat(lat)],
         },
-        distanceField: 'distance', // Adds the distance from the user to the event
         maxDistance: radius,
         spherical: true,
       },
