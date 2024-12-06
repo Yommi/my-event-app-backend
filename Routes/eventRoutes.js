@@ -5,8 +5,7 @@ const eventController = require('../Controllers/eventController');
 const router = express.Router();
 
 router.route('/').get(eventController.getAllEvents);
-router.route('/nearby').get(eventController.getNearMe);
-router.route('/far').get(eventController.getNotNearMe);
+router.route('/eventsByLocation').get(eventController.getEventsByLocation);
 
 // PROTECTED ROUTES BELOW
 router.use(authController.protect);
@@ -18,7 +17,9 @@ router
   .patch(eventController.setHostId, eventController.updateMyEvent)
   .delete(eventController.setHostId, eventController.deleteEvent);
 
-// router.route('/nearBy').get(eventController.GetNearMe);
+// router.route('/nearby').get(eventController.getNearMe);
+// router.route('/far').get(eventController.getNotNearMe);
+
 // RESTRICT ALL ROUTES BELOW TO ADMIN
 
 router.use(authController.restrictTo('admin'));
