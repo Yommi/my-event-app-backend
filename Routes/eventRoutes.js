@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.route('/').get(eventController.getAllEvents);
 router.route('/eventsByLocation').get(eventController.getEventsByLocation);
+router.route('/eventsByRegion').get(eventController.getEventsByRegion);
 
 // PROTECTED ROUTES BELOW
 router.use(authController.protect);
