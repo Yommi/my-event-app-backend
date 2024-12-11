@@ -173,38 +173,31 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
   });
 });
 
-exports.getEventsByRegion = catchAsync(async (req, res, next) => {
-  const { lat, lng, latDelta, lngDelta } = req.query;
+// exports.getEventsByRegion = catchAsync(async (req, res, next) => {
+//   const { lat, lng, latDelta, lngDelta } = req.query;
 
-  const southWestLat = parseFloat(lat) - parseFloat(latDelta) / 2;
-  const northEastLat = parseFloat(lat) + parseFloat(latDelta) / 2;
-  const southWestLng = parseFloat(lng) - parseFloat(lngDelta) / 2;
-  const northEastLng = parseFloat(lng) + parseFloat(lngDelta) / 2;
+//   const southWestLat = parseFloat(lat) - parseFloat(latDelta) / 2;
+//   const northEastLat = parseFloat(lat) + parseFloat(latDelta) / 2;
+//   const southWestLng = parseFloat(lng) - parseFloat(lngDelta) / 2;
+//   const northEastLng = parseFloat(lng) + parseFloat(lngDelta) / 2;
 
-  console.log(southWestLat, northEastLat, southWestLng, northEastLng);
+//   const events = await Event.find({
+//     location: {
+//       $geoWithin: {
+//         $box: [
+//           [southWestLng, southWestLat],
+//           [northEastLng, northEastLat],
+//         ],
+//       },
+//     },
+//   }).populate('host');
 
-  // southWestLat = -84.87160970170777;
-  // northEastLat = -84.77940970170777;
-  // southWestLng = 33.9153330311417;
-  // northEastLng = 33.95743303114;
-
-  const events = await Event.find({
-    location: {
-      $geoWithin: {
-        $box: [
-          [southWestLng, southWestLat],
-          [northEastLng, northEastLat],
-        ],
-      },
-    },
-  }).populate('host');
-
-  res.status(200).json({
-    status: 'success',
-    results: events.length,
-    data: events,
-  });
-});
+//   res.status(200).json({
+//     status: 'success',
+//     results: events.length,
+//     data: events,
+//   });
+// });
 
 // exports.getNearMe = catchAsync(async (req, res, next) => {
 //   const { lat, lng, query = '', page = 1 } = req.query;

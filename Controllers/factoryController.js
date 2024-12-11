@@ -6,7 +6,12 @@ const User = require('../Models/userModel');
 
 exports.getAll = (model) => {
   return catchAsync(async (req, res, next) => {
-    const docs = await model.find();
+    let docs;
+    if (model === Event) {
+      docs = await model.find().populate('host', 'username');
+    } else {
+      docs = await model.find();
+    }
 
     res.status(200).json({
       status: 'success',
