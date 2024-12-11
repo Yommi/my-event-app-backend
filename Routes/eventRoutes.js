@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.route('/').get(eventController.getAllEvents);
 router.route('/eventsByLocation').get(eventController.getEventsByLocation);
+router.route('/:id').get(eventController.getEvent);
 // router.route('/eventsByRegion').get(eventController.getEventsByRegion);
 
 // PROTECTED ROUTES BELOW
@@ -26,7 +27,6 @@ router.use(authController.restrictTo('admin'));
 
 router
   .route('/:id')
-  .get(eventController.getEvent)
   .post(eventController.createEvent)
   .patch(eventController.updateEvent)
   .delete(eventController.deleteEvent);

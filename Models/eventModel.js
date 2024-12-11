@@ -15,12 +15,15 @@ const eventSchema = new mongoose.Schema({
     required: [true, 'An event must have a host'],
   },
   tags: {
-    food: { type: Boolean, default: false },
-    drinks: { type: Boolean, default: false },
-    music: { type: Boolean, default: false },
-    games: { type: Boolean, default: false },
-    wifi: { type: Boolean, default: false },
-    restrooms: { type: Boolean, default: false },
+    type: [String],
+    default: [],
+    validate: {
+      validator: function (tags) {
+        // Ensure no empty strings in the array
+        return tags.every((tag) => tag.trim() !== '');
+      },
+      message: 'Tag cannot be empty',
+    },
   },
   startTime: {
     type: String,

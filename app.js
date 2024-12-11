@@ -23,6 +23,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/events', eventRoutes);
 
 app.use('/api/v1/images', express.static('images'));
+app.use('/api/v1/videos', express.static('videos'));
 
 app.use(errorController);
 
