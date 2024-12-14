@@ -79,7 +79,14 @@ exports.deleteMyEvent = catchAsync(async (req, res, next) => {
 });
 
 exports.getEventsByLocation = catchAsync(async (req, res, next) => {
-  const { lat, lng, query = '', page = 1, limit = 5 } = req.query;
+  const {
+    lat,
+    lng,
+    query = '',
+    page = 1,
+    limit = 5,
+    noLimit = false,
+  } = req.query;
 
   const skip = (page - 1) * limit;
 
@@ -87,7 +94,9 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
     return next(new AppError('Latituted and longitude required', 400));
   }
 
-  // const radius = 10 * 1000; // 10km;
+  const paginationStage = noLimit
+    ? [] // If noLimit=true, don't apply skip or limit
+    : [{ $skip: skip }, { $limit: parseInt(limit) }];
 
   const events = await Event.aggregate([
     {
@@ -102,9 +111,7 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
     },
 
     // Sort by date first (ascending order, most recent first)
-    { $sort: { date: 1 } },
-    { $skip: skip },
-    { $limit: parseInt(limit) },
+    ...paginationStage,
 
     {
       $lookup: {
@@ -163,7 +170,7 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
     // Filter out events with no matches if needed
     { $match: { priority: { $ne: 4 } } },
     // Sort by priority first, then by date
-    { $sort: { priority: 1, date: 1 } },
+    { $sort: { distance: 1, priority: 1, date: 1 } },
   ]);
 
   res.status(200).json({
