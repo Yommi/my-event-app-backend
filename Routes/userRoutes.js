@@ -3,13 +3,6 @@ const userController = require('../Controllers/userController');
 const authController = require('../Controllers/authController');
 const router = express.Router();
 
-// Authenticaion
-router.route('/signup').post(authController.signUp);
-router.route('/login').post(authController.login);
-
-router.route('/forgotPassword').post(authController.forgotPassword);
-router.route('/resetPassword/:token').post(authController.resetPassword);
-
 // PROTECTED
 router.use(authController.protect);
 

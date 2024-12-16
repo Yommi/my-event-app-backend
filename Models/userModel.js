@@ -20,11 +20,6 @@ const userSchema = new mongoose.Schema({
     unique: true,
     validate: [validator.isEmail, 'please provide a valid email address'],
   },
-  role: {
-    type: String,
-    required: [true, 'A user must have a role'],
-    default: 'user',
-  },
   password: {
     type: String,
     required: [true, 'A user must have a password'],
@@ -35,10 +30,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'A user must confirm their password'],
     validate: {
-      validator: function (conf) {
-        return conf === this.password;
+      validator: function (value) {
+        return value === this.password;
       },
     },
+  },
+  role: {
+    type: String,
+    required: [true, 'A user must have a role'],
+    default: 'user',
   },
   profilePhoto: {
     type: String,
