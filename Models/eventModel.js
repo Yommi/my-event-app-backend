@@ -71,6 +71,17 @@ const eventSchema = new mongoose.Schema({
     coordinates: [Number],
     address: String,
   },
+  registeredUsers: {
+    type: [mongoose.Schema.Types.ObjectId],
+    default: [],
+  },
+});
+
+eventSchema.pre('save', function (next) {
+  if (this.registeredUsers.length === 0) {
+    this.registeredUsers.push(this.host);
+  }
+  next();
 });
 
 eventSchema.index({ location: '2dsphere' });

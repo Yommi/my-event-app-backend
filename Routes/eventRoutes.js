@@ -4,6 +4,7 @@ const eventController = require('../Controllers/eventController');
 
 const router = express.Router();
 
+// For development all these are availble to all
 router.route('/').get(eventController.getAllEvents);
 router.route('/eventsByLocation').get(eventController.getEventsByLocation);
 router.route('/:id').get(eventController.getEvent);
@@ -13,17 +14,15 @@ router.route('/:id').get(eventController.getEvent);
 router.use(authController.protect);
 
 router
-  .route('/my')
+  .route('/user/me')
   .get(eventController.setHostId, eventController.getUserEvents)
   .post(eventController.setHostId, eventController.createEvent)
   .patch(eventController.setHostId, eventController.updateMyEvent)
-  .delete(eventController.setHostId, eventController.deleteEvent);
+  .delete(eventController.setHostId, eventController.deleteMyEvent);
 
 // RESTRICT ALL ROUTES BELOW TO ADMIN
 
 router.use(authController.restrictTo('admin'));
-
-// router.route('/').get(eventController.getAllEvents);
 
 router
   .route('/:id')

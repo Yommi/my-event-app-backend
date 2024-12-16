@@ -21,8 +21,8 @@ exports.getEvent = factory.getOne(Event);
 exports.getAllEvents = factory.getAll(Event);
 
 exports.getUserEvents = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.params.userId);
-  if (!user) return next(new AppError('User does not exist!', 404));
+  const user = req.user;
+  if (!user) return next(new AppError('You are not logged in!', 404));
 
   const events = await Event.find({ host: user.id });
 
@@ -34,10 +34,8 @@ exports.getUserEvents = catchAsync(async (req, res, next) => {
 });
 
 exports.updateMyEvent = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.params.id);
+  const user = req.user;
   const event = await Event.findById(req.query.event);
-
-  console.log(user._id, event.host);
 
   if (!user._id.equals(event.host)) {
     return next(new AppError('You are not allowed to update this event'));
@@ -61,11 +59,11 @@ exports.updateMyEvent = catchAsync(async (req, res, next) => {
 });
 
 exports.deleteMyEvent = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.params.id);
+  const user = req.user;
   const event = await Event.findById(req.query.event);
 
   if (!user._id.equals(event.host)) {
-    return next(new AppError('You are not allowed to update this event'));
+    return next(new AppError('You are not allowed to delete this event'));
   }
 
   if (!event) {
@@ -177,6 +175,14 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
     status: 'success',
     results: events.length,
     data: events,
+  });
+});
+
+exports.register = catchAsync(async (req, res, next) => {
+  const user = req.user;
+
+  res.status(200).json({
+    status: 'success',
   });
 });
 

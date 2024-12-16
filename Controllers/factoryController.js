@@ -23,7 +23,15 @@ exports.getAll = (model) => {
 
 exports.getOne = (model) => {
   return catchAsync(async (req, res, next) => {
-    const doc = await model.findById(req.params.id);
+    let doc;
+
+    if (model === Event) {
+      doc = await model
+        .findById(req.params.id)
+        .populate('host', 'username');
+    } else {
+      doc = await model.findById(req.params.id);
+    }
 
     if (!doc) {
       return next(new AppError('There is no document with that id', 404));
