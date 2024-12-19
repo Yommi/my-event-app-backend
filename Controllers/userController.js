@@ -18,8 +18,6 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   const user = req.user;
   const { oldPassword, newPassword, passwordConfirm } = req.body;
 
-  console.log(oldPassword, user.password);
-
   if (!(await user.correctPassword(oldPassword, user.password))) {
     return next(new AppError('old password is incorrect!', 400));
   }

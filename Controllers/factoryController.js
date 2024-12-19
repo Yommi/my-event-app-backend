@@ -116,9 +116,13 @@ exports.updateOne = (model) => {
       return next(new AppError('There is no document with that id', 404));
     }
 
-    res.status(200).json({
-      status: 'success',
-      data: doc,
-    });
+    if (model === User) {
+      authController.createSendToken(doc, 200, res);
+    } else {
+      res.status(200).json({
+        status: 'success',
+        data: doc,
+      });
+    }
   });
 };

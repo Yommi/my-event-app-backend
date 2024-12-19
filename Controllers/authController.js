@@ -186,3 +186,7 @@ exports.restrictTo = (...roles) => {
     next();
   };
 };
+
+exports.checkIfTokenHasExpired = catchAsync(async (req, res, next) => {
+  const token = req.params.token;
+});

@@ -108,9 +108,6 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
       },
     },
 
-    // Sort by date first (ascending order, most recent first)
-    ...paginationStage,
-
     {
       $lookup: {
         from: 'users',
@@ -124,6 +121,28 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
       $unwind: {
         path: '$hostDetails',
         // preserveNullAndEmptyArrays: true, // Optional: keep events without a host
+      },
+    },
+    // Fields included in output
+    {
+      $project: {
+        hostDetails: {
+          username: 1,
+        },
+        name: 1,
+        description: 1,
+        host: 1,
+        startTime: 1,
+        date: 1,
+        price: 1,
+        currency: 1,
+        private: 1,
+        displayCover: 1,
+        location: 1,
+        tags: 1,
+        displayVideo: 1,
+        distance: 1,
+        priority: 1,
       },
     },
     // Add priority scores based on search query
@@ -159,16 +178,26 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
                 },
                 then: 3,
               },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$hostDetails.username',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 4,
+              },
             ],
-            default: 4, // Lowest priority for no matches
+            default: 5, // Lowest priority for no matches
           },
         },
       },
     },
     // Filter out events with no matches if needed
-    { $match: { priority: { $ne: 4 } } },
+    { $match: { priority: { $ne: 5 } } },
     // Sort by priority first, then by date
     { $sort: { distance: 1, priority: 1, date: 1 } },
+    ...paginationStage,
   ]);
 
   res.status(200).json({
@@ -179,13 +208,78 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
 });
 
 exports.register = catchAsync(async (req, res, next) => {
-  const user = req.user;
+  const userId = req.user._id;
+  const eventId = req.query.event;
+
+  const event = await Event.findById(eventId);
+
+  if (!event.registeredUsers.includes(userId)) {
+    event.registeredUsers.push(userId);
+    event.save();
+  } else {
+    return next(
+      new AppError('User is already registered for this event', 401)
+    );
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: event,
+  });
+});
+
+exports.checkIfRegistered = catchAsync(async (req, res, next) => {
+  const userId = req.user._id;
+  const eventId = req.query.event;
+
+  const event = await Event.findById(eventId);
+
+  if (event.registeredUsers.includes(userId)) {
+    res.send(true);
+  } else {
+    res.send(false);
+  }
+});
+
+exports.eventsRegisteredFor = catchAsync(async (req, res, next) => {
+  const events = await Event.find({
+    registeredUsers: { $in: [req.user._id] },
+  });
+
+  res.status(200).json({
+    status: 'sucess',
+    results: events.length,
+    data: events,
+  });
+});
+
+exports.unregister = catchAsync(async (req, res, next) => {
+  const userId = req.user._id;
+  const eventId = req.query.event;
+
+  const event = await Event.findById(eventId);
+  console.log(event.host, userId);
+  if (event.registeredUsers.includes(userId)) {
+    if (event.host.toString() === userId.toString()) {
+      return next(
+        new AppError('Host cannot unregister from their own event', 401)
+      );
+    } else {
+      await Event.updateOne(
+        { _id: eventId },
+        { $pull: { registeredUsers: userId } }
+      );
+    }
+  } else {
+    return next(
+      new AppError('User was not registered for this event', 401)
+    );
+  }
 
   res.status(200).json({
     status: 'success',
   });
 });
-
 // exports.getEventsByRegion = catchAsync(async (req, res, next) => {
 //   const { lat, lng, latDelta, lngDelta } = req.query;
 

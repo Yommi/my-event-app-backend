@@ -4,14 +4,15 @@ const eventController = require('../Controllers/eventController');
 
 const router = express.Router();
 
-// For development all these are availble to all
+router.use(authController.protect);
+// ALL ROUTES AFTER THIS LINE ARE PROTECTED
+
 router.route('/').get(eventController.getAllEvents);
 router.route('/eventsByLocation').get(eventController.getEventsByLocation);
-router.route('/:id').get(eventController.getEvent);
-// router.route('/eventsByRegion').get(eventController.getEventsByRegion);
-
-// PROTECTED ROUTES BELOW
-router.use(authController.protect);
+router.route('/checkRegistered').get(eventController.checkIfRegistered);
+router.route('/registeredFor').get(eventController.eventsRegisteredFor);
+router.route('/register').patch(eventController.register);
+router.route('/unregister').patch(eventController.unregister);
 
 router
   .route('/user/me')
@@ -20,12 +21,12 @@ router
   .patch(eventController.setHostId, eventController.updateMyEvent)
   .delete(eventController.setHostId, eventController.deleteMyEvent);
 
-// RESTRICT ALL ROUTES BELOW TO ADMIN
-
 router.use(authController.restrictTo('admin'));
+// ALL ROUTES AFTER THIS LINE ARE RESTRICTED TO ADMINS
 
 router
   .route('/:id')
+  .get(eventController.getEvent)
   .post(eventController.createEvent)
   .patch(eventController.updateEvent)
   .delete(eventController.deleteEvent);
