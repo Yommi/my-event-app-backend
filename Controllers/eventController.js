@@ -258,7 +258,6 @@ exports.unregister = catchAsync(async (req, res, next) => {
   const eventId = req.query.event;
 
   const event = await Event.findById(eventId);
-  console.log(event.host, userId);
   if (event.registeredUsers.includes(userId)) {
     if (event.host.toString() === userId.toString()) {
       return next(
