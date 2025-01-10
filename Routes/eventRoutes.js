@@ -18,8 +18,12 @@ router
   .route('/user/me')
   .get(eventController.setHostId, eventController.getUserEvents)
   .post(eventController.setHostId, eventController.createEvent)
-  .patch(eventController.setHostId, eventController.updateMyEvent)
-  .delete(eventController.setHostId, eventController.deleteMyEvent);
+  .patch(eventController.updateMyEvent)
+  .delete(eventController.deleteMyEvent);
+
+  router
+  .route('/:id')
+  .get(eventController.getEvent)
 
 router.use(authController.restrictTo('admin'));
 // ALL ROUTES AFTER THIS LINE ARE RESTRICTED TO ADMINS

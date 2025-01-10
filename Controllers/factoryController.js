@@ -46,30 +46,42 @@ exports.getOne = (model) => {
 
 exports.createOne = (model) => {
   return catchAsync(async (req, res, next) => {
-    // FILTER FOR EVENT req.body
     if (model === Event) {
-      req.body.host = req.params.id;
-    }
+      const filteredEvent = authController.filterObj(
+        req.body,
+        'registeredUsers'
+      );
+      filteredEvent.host = req.params.id;
 
-    // FILTER FOR USER req.body
-    if (model === User) {
-      const filteredBody = authController.filterObj(req.body, 'role');
+      const event = await model.create(filteredEvent);
+      const user = await User.findById(req.params.id);
+
+      user.events.push(user);
+
+      await user.save({ validateBeforeSave: false });
+
+      res.status(200).json({
+        status: 'success',
+        data: event,
+      });
+    } else if (model === User) {
+      const filteredBody = authController.filterObj(
+        req.body,
+        'role',
+        'events',
+        'followers',
+        'following'
+      );
       req.body = filteredBody;
+      const user = await model.create(req.body);
+
+      // remove password from json output
+      if (Object.keys(req.body).includes('password')) {
+        user.password = undefined;
+      }
+
+      authController.createSendToken(user, 201, res);
     }
-
-    const doc = await model.create(req.body);
-
-    // remove password from json output
-    if (Object.keys(req.body).includes('password')) {
-      doc.password = undefined;
-    }
-
-    model === User
-      ? authController.createSendToken(doc, 201, res)
-      : res.status(200).json({
-          status: 'success',
-          data: doc,
-        });
   });
 };
 
@@ -95,6 +107,9 @@ exports.updateOne = (model) => {
       const filteredBody = authController.filterObj(
         req.body,
         'role',
+        'events',
+        'followers',
+        'following',
         'password',
         'passwordConfirm'
       );
@@ -103,7 +118,11 @@ exports.updateOne = (model) => {
 
     // FILTER FOR EVENT req.body
     if (model === Event) {
-      const filteredBody = authController.filterObj(req.body, 'host');
+      const filteredBody = authController.filterObj(
+        req.body,
+        'host',
+        'registeredUsers'
+      );
       req.body = filteredBody;
     }
 

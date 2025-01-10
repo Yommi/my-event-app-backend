@@ -7,10 +7,6 @@ const AppError = require('../utils/appError');
 
 exports.setHostId = catchAsync(async (req, res, next) => {
   req.params.id = req.user.id;
-
-  // FOR getMyEvents
-  req.params.userId = req.user.id;
-
   next();
 });
 
@@ -24,7 +20,10 @@ exports.getUserEvents = catchAsync(async (req, res, next) => {
   const user = req.user;
   if (!user) return next(new AppError('You are not logged in!', 404));
 
-  const events = await Event.find({ host: user.id });
+  const events = await Event.find({ host: user.id }).populate(
+    'host',
+    'username'
+  );
 
   res.status(200).json({
     status: 'success',
@@ -41,7 +40,11 @@ exports.updateMyEvent = catchAsync(async (req, res, next) => {
     return next(new AppError('You are not allowed to update this event'));
   }
 
-  const filteredBody = authController.filterObj(req.body, 'host');
+  const filteredBody = authController.filterObj(
+    req.body,
+    'host',
+    'registeredUsers'
+  );
   req.body = filteredBody;
   const doc = await Event.findByIdAndUpdate(req.query.event, req.body, {
     new: true,
@@ -279,6 +282,7 @@ exports.unregister = catchAsync(async (req, res, next) => {
     status: 'success',
   });
 });
+
 // exports.getEventsByRegion = catchAsync(async (req, res, next) => {
 //   const { lat, lng, latDelta, lngDelta } = req.query;
 

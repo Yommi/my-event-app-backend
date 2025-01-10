@@ -67,7 +67,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   }
 
   const resetToken = await user.createPasswordResetToken();
-  user.save({ validateBeforeSave: false });
+  await user.save({ validateBeforeSave: false });
 
   const resetUrl = `${req.protocol}://${req.get(
     'host'
@@ -83,7 +83,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   } catch (err) {
     user.passwordResetToken = undefined;
     user.passwordResetTokenExpires = undefined;
-    user.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
     return next(
       new AppError('Email failed to send, please try again later', 500)
     );
@@ -115,7 +115,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.passwordResetToken = undefined;
   user.passwordResetTokenExpires = undefined;
 
-  user.save({ validateBeforeSave: true });
+  await user.save({ validateBeforeSave: true });
 
   console.log(user.password);
 

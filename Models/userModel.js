@@ -44,7 +44,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'default.jpg',
   },
-  Events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+  events: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
   followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   passwordResetToken: String,
@@ -80,7 +80,7 @@ userSchema.methods.createPasswordResetToken = async function () {
     .update(resetToken)
     .digest('hex');
 
-  this.passwordResetTokenExpires = Date.now() + 10 * 60 * 60 * 1000;
+  this.passwordResetTokenExpires = Date.now() + 10 * 60 * 1000;
   return resetToken;
 };
 
