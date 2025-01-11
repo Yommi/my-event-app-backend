@@ -17,98 +17,30 @@ exports.getEvent = factory.getOne(Event);
 exports.getAllEvents = factory.getAll(Event);
 
 exports.getUserEvents = catchAsync(async (req, res, next) => {
-  const user = req.user;
-  if (!user) return next(new AppError('You are not logged in!', 404));
-
-  const events = await Event.find({ host: user.id }).populate(
-    'host',
-    'username'
-  );
-
-  res.status(200).json({
-    status: 'success',
-    results: events.length,
-    data: events,
-  });
-});
-
-exports.updateMyEvent = catchAsync(async (req, res, next) => {
-  const user = req.user;
-  const event = await Event.findById(req.query.event);
-
-  if (!user._id.equals(event.host)) {
-    return next(new AppError('You are not allowed to update this event'));
-  }
-
-  const filteredBody = authController.filterObj(
-    req.body,
-    'host',
-    'registeredUsers'
-  );
-  req.body = filteredBody;
-  const doc = await Event.findByIdAndUpdate(req.query.event, req.body, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (!doc) {
-    return next(new AppError('There is no document with that id', 404));
-  }
-
-  res.status(200).json({
-    status: 'success',
-    data: doc,
-  });
-});
-
-exports.deleteMyEvent = catchAsync(async (req, res, next) => {
-  const user = req.user;
-  const event = await Event.findById(req.query.event);
-
-  if (!user._id.equals(event.host)) {
-    return next(new AppError('You are not allowed to delete this event'));
-  }
-
-  if (!event) {
-    return next(new AppError('There is no document with that id', 404));
-  }
-
-  res.status(204).json({
-    status: 'success',
-    data: null,
-  });
-});
-
-exports.getEventsByLocation = catchAsync(async (req, res, next) => {
-  const {
-    lat,
-    lng,
-    query = '',
-    page = 1,
-    limit = 5,
-    noLimit = false,
-  } = req.query;
+  const { lat, lng, query = '', page = 1, limit = 5 } = req.query;
 
   const skip = (page - 1) * limit;
 
-  if (!lat || !lng) {
-    return next(new AppError('Latituted and longitude required', 400));
-  }
+  const pipeline = [];
 
-  const paginationStage = noLimit
-    ? [] // If noLimit=true, don't apply skip or limit
-    : [{ $skip: skip }, { $limit: parseInt(limit) }];
-
-  const events = await Event.aggregate([
-    {
+  if (lat && lng) {
+    pipeline.push({
       $geoNear: {
         near: {
           type: 'Point',
           coordinates: [parseFloat(lng), parseFloat(lat)],
         },
-        distanceField: 'distance', // Adds the distance from the user to the event
+        distanceField: 'distance',
         spherical: true,
       },
+    });
+  }
+
+  const paginationStage = [{ $skip: skip }, { $limit: parseInt(limit) }];
+
+  pipeline.push(
+    {
+      $match: { host: req.user._id },
     },
 
     {
@@ -200,8 +132,194 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
     { $match: { priority: { $ne: 5 } } },
     // Sort by priority first, then by date
     { $sort: { distance: 1, priority: 1, date: 1 } },
-    ...paginationStage,
-  ]);
+    ...paginationStage
+  );
+
+  const events = await Event.aggregate(pipeline);
+
+  res.status(200).json({
+    status: 'success',
+    results: events.length,
+    data: events,
+  });
+});
+
+exports.updateMyEvent = catchAsync(async (req, res, next) => {
+  const user = req.user;
+  const event = await Event.findById(req.query.event);
+
+  if (!user._id.equals(event.host)) {
+    return next(new AppError('You are not allowed to update this event'));
+  }
+
+  const filteredBody = authController.filterObj(
+    req.body,
+    'host',
+    'registeredUsers'
+  );
+  req.body = filteredBody;
+  const doc = await Event.findByIdAndUpdate(req.query.event, req.body, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!doc) {
+    return next(new AppError('There is no document with that id', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: doc,
+  });
+});
+
+exports.deleteMyEvent = catchAsync(async (req, res, next) => {
+  const user = req.user;
+  const event = await Event.findById(req.query.event);
+
+  if (!user._id.equals(event.host)) {
+    return next(new AppError('You are not allowed to delete this event'));
+  }
+
+  if (!event) {
+    return next(new AppError('There is no document with that id', 404));
+  }
+
+  res.status(204).json({
+    status: 'success',
+    data: null,
+  });
+});
+
+exports.getEventsByLocation = catchAsync(async (req, res, next) => {
+  const {
+    lat,
+    lng,
+    query = '',
+    page = 1,
+    limit = 5,
+    noLimit = false,
+  } = req.query;
+
+  const skip = (page - 1) * limit;
+
+  const pipeline = [];
+
+  if (lat && lng) {
+    pipeline.push({
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [parseFloat(lng), parseFloat(lat)],
+        },
+        distanceField: 'distance',
+        spherical: true,
+      },
+    });
+  }
+
+  const paginationStage = noLimit
+    ? []
+    : [{ $skip: skip }, { $limit: parseInt(limit) }];
+
+  pipeline.push(
+    {
+      $match: { host: req.user._id },
+    },
+
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'host',
+        foreignField: '_id',
+        as: 'hostDetails',
+      },
+    },
+    // Flatten the 'hostDetails' array (because $lookup returns an array)
+    {
+      $unwind: {
+        path: '$hostDetails',
+        // preserveNullAndEmptyArrays: true, // Optional: keep events without a host
+      },
+    },
+    // Fields included in output
+    {
+      $project: {
+        hostDetails: {
+          username: 1,
+        },
+        name: 1,
+        description: 1,
+        host: 1,
+        startTime: 1,
+        date: 1,
+        price: 1,
+        currency: 1,
+        private: 1,
+        displayCover: 1,
+        location: 1,
+        tags: 1,
+        displayVideo: 1,
+        distance: 1,
+        priority: 1,
+      },
+    },
+    // Add priority scores based on search query
+    {
+      $addFields: {
+        priority: {
+          $switch: {
+            branches: [
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$name',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 1,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$location.address',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 2,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$time',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 3,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$hostDetails.username',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 4,
+              },
+            ],
+            default: 5, // Lowest priority for no matches
+          },
+        },
+      },
+    },
+    // Filter out events with no matches if needed
+    { $match: { priority: { $ne: 5 } } },
+    // Sort by priority first, then by date
+    { $sort: { distance: 1, priority: 1, date: 1 } },
+    ...paginationStage
+  );
+
+  const events = await Event.aggregate(pipeline);
 
   res.status(200).json({
     status: 'success',
