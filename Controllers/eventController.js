@@ -363,12 +363,125 @@ exports.checkIfRegistered = catchAsync(async (req, res, next) => {
 });
 
 exports.eventsRegisteredFor = catchAsync(async (req, res, next) => {
-  const events = await Event.find({
-    registeredUsers: { $in: [req.user._id] },
-  });
+  const { lat, lng, query = '', page = 1, limit = 5 } = req.query;
+
+  const skip = (page - 1) * limit;
+
+  const pipeline = [];
+
+  if (lat && lng) {
+    pipeline.push({
+      $geoNear: {
+        near: {
+          type: 'Point',
+          coordinates: [parseFloat(lng), parseFloat(lat)],
+        },
+        distanceField: 'distance',
+        spherical: true,
+      },
+    });
+  }
+
+  const paginationStage = [{ $skip: skip }, { $limit: parseInt(limit) }];
+
+  pipeline.push(
+    {
+      $match: { registeredUsers: { $in: [req.user._id] } },
+    },
+
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'host',
+        foreignField: '_id',
+        as: 'hostDetails',
+      },
+    },
+    {
+      $unwind: {
+        path: '$hostDetails',
+      },
+    },
+    {
+      $project: {
+        hostDetails: {
+          username: 1,
+        },
+        name: 1,
+        description: 1,
+        host: 1,
+        startTime: 1,
+        date: 1,
+        price: 1,
+        currency: 1,
+        private: 1,
+        displayCover: 1,
+        location: 1,
+        tags: 1,
+        displayVideo: 1,
+        distance: 1,
+        priority: 1,
+      },
+    },
+    // Add priority scores based on search query
+    {
+      $addFields: {
+        priority: {
+          $switch: {
+            branches: [
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$name',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 1,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$location.address',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 2,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$time',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 3,
+              },
+              {
+                case: {
+                  $regexMatch: {
+                    input: '$hostDetails.username',
+                    regex: new RegExp(query, 'i'),
+                  },
+                },
+                then: 4,
+              },
+            ],
+            default: 5, // Lowest priority for no matches
+          },
+        },
+      },
+    },
+    // Filter out events with no matches if needed
+    { $match: { priority: { $ne: 5 } } },
+    // Sort by priority first, then by date
+    { $sort: { distance: 1, priority: 1, date: 1 } },
+    ...paginationStage
+  );
+
+  const events = await Event.aggregate(pipeline);
 
   res.status(200).json({
-    status: 'sucess',
+    status: 'success',
     results: events.length,
     data: events,
   });
