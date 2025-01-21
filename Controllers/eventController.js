@@ -223,9 +223,9 @@ exports.getEventsByLocation = catchAsync(async (req, res, next) => {
     : [{ $skip: skip }, { $limit: parseInt(limit) }];
 
   pipeline.push(
-    {
-      $match: { host: req.user._id },
-    },
+    // {
+    //   $match: { host: req.user._id },
+    // },
 
     {
       $lookup: {
